@@ -1,0 +1,210 @@
+-- Przygotuj bazę danych
+
+CREATE TABLE REGIONS (
+    region_id NUMBER PRIMARY KEY,
+    region_name VARCHAR2(50)
+);
+
+CREATE TABLE COUNTRIES (
+    country_id NUMBER PRIMARY KEY,
+    country_name VARCHAR2(100),
+    region_id NUMBER
+);
+
+CREATE TABLE LOCATIONS (
+    location_id NUMBER PRIMARY KEY,
+    street_address VARCHAR2(200),
+    postal_code VARCHAR2(20),
+    city VARCHAR2(100),
+    state_province VARCHAR2(100),
+    country_id NUMBER
+);
+
+CREATE TABLE DEPARTMENTS (
+    department_id NUMBER PRIMARY KEY,
+    department_name VARCHAR2(100) NOT NULL,
+    manager_id NUMBER,
+    location_id NUMBER
+);
+
+CREATE TABLE JOBS (
+    job_id NUMBER PRIMARY KEY,
+    job_title VARCHAR2(100) NOT NULL,
+    min_salary NUMBER,
+    max_salary NUMBER
+);
+
+
+CREATE TABLE EMPLOYEES (
+    employee_id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(50),
+    last_name VARCHAR2(50) NOT NULL,
+    hire_date DATE
+);
+
+ALTER TABLE EMPLOYEES ADD (
+    email VARCHAR2(100),
+    phone_number VARCHAR2(50),
+    job_id NUMBER,
+    salary NUMBER,
+    commission_pct NUMBER(5,2),
+    manager_id NUMBER,
+    department_id NUMBER
+);
+
+DESC EMPLOYEES;
+
+
+CREATE TABLE JOB_HISTORY (
+    employee_id NUMBER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    job_id NUMBER NOT NULL,
+    department_id NUMBER NOT NULL,
+    PRIMARY KEY (employee_id, start_date)
+);
+
+--------------------------------
+------    KLUCZE OBCE
+--------------------------------
+
+-- COUNTRIES -> REGIONS (region_id)
+ALTER TABLE COUNTRIES
+ADD CONSTRAINT fk_coutries_regions
+FOREIGN KEY (region_id)
+REFERENCES REGIONS(region_id)
+ON DELETE SET NULL;  -- przy usunieciu region, w coutries ustawi sie null
+
+
+-- LOCATIONS -> COUNTRIES (country_id)
+ALTER TABLE LOCATIONS 
+ADD CONSTRAINT fk_locations_country 
+FOREIGN KEY (country_id) 
+REFERENCES COUNTRIES(country_id) 
+ON DELETE SET NULL;
+
+-- DEPARTMENTS -> LOCATIONS 
+ALTER TABLE DEPARTMENTS 
+ADD CONSTRAINT fk_departments_location 
+FOREIGN KEY (location_id) 
+REFERENCES LOCATIONS(location_id) 
+ON DELETE SET NULL;
+
+
+-- EMPLOYEES -> JOBS
+ALTER TABLE EMPLOYEES 
+ADD CONSTRAINT fk_employees_job 
+FOREIGN KEY (job_id) 
+REFERENCES JOBS(job_id) 
+ON DELETE CASCADE;
+
+-- EMPLYEES -> EMPLOYEES, rekurencyjna
+ALTER TABLE EMPLOYEES 
+ADD CONSTRAINT fk_employees_manager 
+FOREIGN KEY (manager_id) 
+REFERENCES EMPLOYEES(employee_id) 
+ON DELETE SET NULL;
+
+-- EMPLOYEES -> DEPARTMENTS
+ALTER TABLE EMPLOYEES 
+ADD CONSTRAINT fk_employees_department 
+FOREIGN KEY (department_id) 
+REFERENCES DEPARTMENTS(department_id) 
+ON DELETE SET NULL;
+
+
+-- JOB_HISTORY -> EMPLOYEES (employee_id)  
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_jobhistory_employee
+FOREIGN KEY (employee_id)
+REFERENCES EMPLOYEES(employee_id)
+ON DELETE CASCADE;  -- po usunieciu praciownika, cały ślad po nim zostanie usunięcty
+
+-- JOB_HISTORY -> JOBS (job_id)
+ALTER TABLE JOB_HISTORY 
+ADD CONSTRAINT fk_jobhistory_job 
+FOREIGN KEY (job_id) 
+REFERENCES JOBS(job_id) 
+ON DELETE CASCADE;
+
+-- JOB_HISTORY -> DEPARTMENTS (department_id)
+ALTER TABLE JOB_HISTORY 
+ADD CONSTRAINT fk_jobhistory_department 
+FOREIGN KEY (department_id) 
+REFERENCES DEPARTMENTS(department_id) 
+ON DELETE CASCADE;
+
+
+-- W tabeli JOBS ustaw warunek (CHECK), taki aby min_salary było mniejsze od
+-- max_salary co najmniej o 2000.
+ALTER TABLE JOBS 
+ADD CONSTRAINT chk_jobs_salary 
+CHECK (max_salary >= min_salary + 2000);
+
+
+-- Do tabeli JOBS wstaw 4 rekordy
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (1, 'Developer', 4000, 8000);  -- OK, różnica 4000
+
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (2, 'HR Manager', 3000, 5000);  -- OK, różnica 2000
+
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (3, 'Analyst', 5000, 6500);  -- zle! Różnica 1500
+
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (3, 'Analyst', 5000, 8000);  -- ok
+
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (4, 'Accountant', 7000, 8000);  -- zle! Różnica 1000
+
+INSERT INTO JOBS (job_id, job_title, min_salary, max_salary) 
+VALUES (4, 'Accountant', 7000, 10000);  -- ok
+
+
+-- Wstaw 4 rekordy do tabeli EMPLOYEES
+INSERT INTO EMPLOYEES 
+    (employee_id, first_name, last_name, hire_date, email, phone_number, job_id, salary, commission_pct, manager_id, department_id)
+VALUES 
+    (1, 'John', 'Doe', SYSDATE, 'john.doe@example.com', '1234567890', 1, 6000, NULL, NULL, NULL);
+    
+INSERT INTO EMPLOYEES 
+    (employee_id, first_name, last_name, hire_date, email, phone_number, job_id, salary, commission_pct, manager_id, department_id)
+VALUES 
+    (2, 'Alice', 'Smith', SYSDATE, 'alice.smith@example.com', '2345678901', 2, 4500, NULL, NULL, NULL);
+    
+INSERT INTO EMPLOYEES 
+    (employee_id, first_name, last_name, hire_date, email, phone_number, job_id, salary, commission_pct, manager_id, department_id)
+VALUES 
+    (3, 'Bob', 'Johnson', SYSDATE, 'bob.johnson@example.com', '3456789012', 3, 5500, NULL, NULL, NULL);
+    
+INSERT INTO EMPLOYEES 
+    (employee_id, first_name, last_name, hire_date, email, phone_number, job_id, salary, commission_pct, manager_id, department_id)
+VALUES 
+    (4, 'Carol', 'Williams', SYSDATE, 'carol.williams@example.com', '4567890123', 4, 8500, NULL, 1, NULL);
+	
+
+    
+-- W tabeli EMPLOYEES zmień menadżera pracownikom o id 2 i 3 na 1
+UPDATE EMPLOYEES
+SET manager_id = 1
+WHERE employee_id IN (2, 3);
+
+
+-- Dla tabeli JOBS zwiększ minimalne i maksymalne wynagrodzenie o 500 jeśli nazwa zawiera ‘b’ lub ‘s’
+UPDATE JOBS
+SET min_salary = min_salary + 500,
+    max_salary = max_salary + 500
+WHERE LOWER(job_title) LIKE '%b%' 
+   OR LOWER(job_title) LIKE '%s%';
+    
+	
+-- Z tabeli JOBS usuń rekordy, dla których maksymalne zarobki są większe od 9000.
+DELETE FROM JOBS
+WHERE max_salary > 9000;
+
+
+-- Usuń jedną z tabel i sprawdź czy możesz ją odzyskać.
+DROP TABLE LOCATIONS CASCADE CONSTRAINTS;
+
+FLASHBACK TABLE LOCATIONS TO BEFORE DROP;
