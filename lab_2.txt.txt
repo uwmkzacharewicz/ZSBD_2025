@@ -221,5 +221,34 @@ WHERE ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) > (
     FROM EMPLOYEES
 );
 
+-- Znajdź pracowników, którzy pracują dłużej niż średnia długość zatrudnienia w firmie
+SELECT first_name, last_name, hire_date,
+       ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) AS miesiace_pracy
+FROM EMPLOYEES
+WHERE ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) > (
+    SELECT AVG(ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)))
+    FROM EMPLOYEES
+);
+
+-- Dla każdego departamentu – nazwę departamentu, liczbę pracowników oraz średnie wynagrodzenie, uporządkowane według liczby pracowników malejąco
+-- Wypisz imiona i nazwiska pracowników, którzy zarabiają mniej niż każdy pracownik w departamencie „IT”
+-- Znajdź departamenty, w których pracuje co najmniej jeden pracownik zarabiający więcej niż średnia pensja w całej firmie
+-- Wypisz pięć najlepiej opłacanych stanowisk pracy wraz ze średnimi zarobkami
+SELECT job_id, AVG(salary) AS srednia_zarobkow
+FROM EMPLOYEES
+GROUP BY job_id
+ORDER BY srednia_zarobkow DESC
+FETCH FIRST 5 ROWS ONLY;
+
+-- Dla każdego regionu – wypisz nazwę regionu, liczbę krajów oraz liczbę pracowników pracujących w tym regionie
+-- Podaj imiona i nazwiska pracowników, którzy zarabiają więcej niż ich menedżerowie
+-- Policz, ilu pracowników zaczęło pracę w każdym miesiącu (bez względu na rok)
+SELECT TO_CHAR(hire_date, 'MM') AS miesiac,
+       COUNT(*) AS liczba_pracownikow
+FROM EMPLOYEES
+GROUP BY TO_CHAR(hire_date, 'MM')
+ORDER BY miesiac;
+
+-- Znajdź trzy departamenty z najwyższą średnią pensją i wypisz ich nazwę oraz średnie wynagrodzenie
 
 
